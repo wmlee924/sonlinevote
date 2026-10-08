@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>캐릭터 공모전 투표</title>
+  <meta name="description" content="학생들이 제출한 캐릭터 작품을 보고 하트와 댓글로 투표하는 사이트" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- ===================== 상단 헤더 ===================== -->
+  <header class="header">
+    <div class="header__inner">
+      <h1 class="header__title" id="siteTitle">캐릭터 공모전 투표</h1>
+      <!-- 로그인 전: [참여하기] 버튼 / 로그인 후: 마스킹된 이름 + [로그아웃] -->
+      <div class="header__user" id="headerUser">
+        <button class="btn btn--primary btn--sm" id="btnOpenLogin" type="button">참여하기</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <!-- 안내문 + 투표 상태 배지 -->
+    <section class="notice" id="noticeBox">
+      <span class="badge" id="voteBadge">불러오는 중…</span>
+      <p class="notice__text" id="noticeText"></p>
+    </section>
+
+    <!-- 정렬 선택 -->
+    <nav class="sortbar" aria-label="정렬">
+      <button class="sortbar__btn is-active" data-sort="random" type="button">랜덤</button>
+      <button class="sortbar__btn" data-sort="popular" type="button">인기순</button>
+      <button class="sortbar__btn" data-sort="latest" type="button">최신순</button>
+    </nav>
+
+    <!-- 갤러리: 로딩(스켈레톤) → 카드 그리드 / 빈 목록 / 오류 중 하나가 보임 -->
+    <section class="gallery" id="gallery" aria-live="polite">
+      <div class="grid" id="grid">
+        <!-- 스켈레톤 카드 (자바스크립트가 실제 카드로 교체) -->
+        <div class="card card--skeleton"></div>
+        <div class="card card--skeleton"></div>
+        <div class="card card--skeleton"></div>
+        <div class="card card--skeleton"></div>
+        <div class="card card--skeleton"></div>
+        <div class="card card--skeleton"></div>
+      </div>
+      <div class="state state--empty hidden" id="emptyState">
+        <p>아직 등록된 작품이 없어요.</p>
+      </div>
+      <div class="state state--error hidden" id="errorState">
+        <p id="errorText">작품을 불러오지 못했어요.</p>
+        <button class="btn btn--outline" id="btnRetry" type="button">다시 시도</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <a href="admin.html" class="footer__admin">관리자</a>
+  </footer>
+
+  <!-- ===================== 작품 상세 모달 ===================== -->
+  <!-- 이미지 · 하트 · 댓글을 한 화면에 배치 (보기 → 하트 → 댓글 흐름) -->
+  <div class="modal hidden" id="detailModal" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+    <div class="modal__backdrop" data-close></div>
+    <div class="modal__panel">
+      <button class="modal__close" type="button" data-close aria-label="닫기">&times;</button>
+
+      <div class="detail">
+        <div class="detail__imgwrap">
+          <img class="detail__img" id="detailImg" src="" alt="" />
+        </div>
+
+        <div class="detail__body">
+          <h2 class="detail__title" id="detailTitle"></h2>
+          <p class="detail__author" id="detailAuthor"></p>
+
+          <!-- 큰 하트 버튼. 투표 마감/비로그인 상태는 자바스크립트가 문구로 바꿈 -->
+          <div class="detail__actions" id="detailActions"></div>
+
+          <p class="detail__desc" id="detailDesc"></p>
+
+          <!-- 댓글 -->
+          <section class="comments">
+            <h3 class="comments__title">댓글 <span id="commentCount">0</span></h3>
+            <ul class="comments__list" id="commentList"></ul>
+            <div class="comments__form" id="commentFormWrap"></div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== 로그인 모달 ===================== -->
+  <div class="modal hidden" id="loginModal" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+    <div class="modal__backdrop" data-close></div>
+    <div class="modal__panel modal__panel--sm">
+      <button class="modal__close" type="button" data-close aria-label="닫기">&times;</button>
+      <form class="login" id="loginForm" novalidate>
+        <h2 class="login__title" id="loginTitle">투표 참여하기</h2>
+        <p class="login__help">학교·학번·이름을 입력하면 바로 참여할 수 있어요.<br />같은 학번은 한 번만 투표할 수 있습니다.</p>
+
+        <label class="field">
+          <span class="field__label">학교</span>
+          <input class="field__input" name="school" type="text" placeholder="예: 한빛고등학교" maxlength="40" autocomplete="organization" required />
+        </label>
+        <label class="field">
+          <span class="field__label">학번</span>
+          <input class="field__input" name="student_no" type="text" placeholder="예: 10315" maxlength="20" inputmode="numeric" required />
+        </label>
+        <label class="field">
+          <span class="field__label">이름</span>
+          <input class="field__input" name="name" type="text" placeholder="예: 홍길동" maxlength="20" autocomplete="name" required />
+        </label>
+
+        <label class="consent">
+          <input type="checkbox" name="consent" required />
+          <span>
+            <strong>개인정보 수집·이용 동의 (필수)</strong><br />
+            수집 항목: 학교, 학번, 이름 · 목적: 공모전 투표 참여자 확인 및 중복 투표 방지 ·
+            보유 기간: 공모전 종료 후 즉시 파기 · 댓글에는 이름이 가려져(예: 홍*동) 표시됩니다.
+          </span>
+        </label>
+
+        <p class="login__error hidden" id="loginError"></p>
+        <button class="btn btn--primary btn--block" id="btnLoginSubmit" type="submit">참여하기</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 짧은 알림(토스트) -->
+  <div class="toast hidden" id="toast" role="status"></div>
+
+  <!-- supabase-js v2 (CDN) → window.supabase 전역 객체 제공 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
